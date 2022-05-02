@@ -17,6 +17,7 @@ export interface IControlContext<T extends AbstractControl = AbstractControl> {
   validationErrors?: {
     [key: string]: any;
   } | null;
+  index?: number;
 }
 
 export function createControlContext<

@@ -17,6 +17,7 @@ export interface IFormContext extends IFormConfig {
   globalErrorMessages?: IControlErrorMessages;
   submit: () => void;
 }
+
 export const WFormContext = React.createContext<IFormContext>({
   form: new FormGroup({}),
   formLoadedData: null,
@@ -32,7 +33,11 @@ export const WFormContext = React.createContext<IFormContext>({
   markAsSubmitted: () => {},
 });
 
-export interface IWFormProps {
+type FormProps = React.DetailedHTMLProps<
+  React.FormHTMLAttributes<HTMLFormElement>,
+  HTMLFormElement
+>;
+export interface IWFormProps extends FormProps {
   formConfig: FormConfig;
   children?: ReactNode | ((params: IFormContext) => ReactNode);
   renderOnError?: (error: any) => ReactNode;
