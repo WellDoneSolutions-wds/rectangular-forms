@@ -1,12 +1,20 @@
-
 import { useReducer, useRef } from "react";
 import { AbstractControl } from "../../exports";
-import { AsyncProcessor, AsyncProcessorFailed, AsyncProcessorProcessing, AsyncProcessorSucceed } from "../utils/LoadControl";
+import {
+  AsyncProcessor,
+  AsyncProcessorFailed,
+  AsyncProcessorProcessing,
+  AsyncProcessorSucceed,
+} from "../utils/LoadControl";
 import { STATUS } from "./WForm";
 interface IUseConfigForm {
   createForm: ICreateForm;
   shared?: { [key: string]: any };
-  onSubmit?: (control: AbstractControl, save: AsyncProcessor) => void;
+  onSubmit?: (
+    control: AbstractControl,
+    save: AsyncProcessor,
+    event: React.FormEvent<HTMLFormElement>
+  ) => void;
   onFormLoaded?: (form: AbstractControl, data: any) => void;
   loadRetry?: (
     config: {
@@ -150,9 +158,9 @@ export class FormConfig implements IFormConfig {
     return new FormConfig(config, forceUpdate);
   }
 
-  submit() {
+  submit(event: React.FormEvent<HTMLFormElement>) {
     const { onSubmit } = this.config;
-    onSubmit && onSubmit(this.form!, this._saveDataAsyncProcesor);
+    onSubmit && onSubmit(this.form!, this._saveDataAsyncProcesor, event);
   }
 }
 

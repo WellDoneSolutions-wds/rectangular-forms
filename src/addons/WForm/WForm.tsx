@@ -15,7 +15,7 @@ export interface IFormContext extends IFormConfig {
   submitted: boolean;
   markAsSubmitted: () => void;
   globalErrorMessages?: IControlErrorMessages;
-  submit: () => void;
+  submit: (event: React.FormEvent<HTMLFormElement>) => void;
 }
 
 export const WFormContext = React.createContext<IFormContext>({
@@ -91,8 +91,9 @@ export const WForm: FC<IWFormProps> = (props) => {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             setSubmitted(true);
-            formConfig.submit();
+            formConfig.submit(e);
           }}
         >
           <ControlContext.Provider value={controlContext}>

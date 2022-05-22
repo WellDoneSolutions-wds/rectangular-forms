@@ -25,7 +25,7 @@ interface ICurrentControl<T extends AbstractControl = AbstractControl> {
 
 interface IUseCurrentControlProps<T extends AbstractControl>
   extends ICurrentControl<T> {
-  expectedControl: "FormControl" | "FormGroup" | "FormArray";
+  expectedControl: any;
 }
 
 export const useCurrentControl = <T extends AbstractControl>(
@@ -76,7 +76,7 @@ export const useCurrentControl = <T extends AbstractControl>(
       } else {
         currentControl = control as T;
       }
-      if (currentControl.constructor.name !== expectedControl) {
+      if (currentControl instanceof expectedControl) {
         const messageError = {
           code: `Control with name :${name} is not instance of ${expectedControl}.`,
         };
@@ -214,5 +214,5 @@ export interface IControlProvider<T extends AbstractControl = AbstractControl>
   children?:
     | React.ReactNode
     | ((config: IControlContext<T>) => React.ReactNode);
-  expectedControl: "FormArray" | "FormControl" | "FormGroup";
+  expectedControl: any;
 }
