@@ -95,6 +95,7 @@ export const WForm: FC<IWFormProps> = (props) => {
             setSubmitted(true);
             formConfig.submit(e);
           }}
+          {...props}
         >
           <ControlContext.Provider value={controlContext}>
             <WFormContext.Provider value={formContextProvider}>

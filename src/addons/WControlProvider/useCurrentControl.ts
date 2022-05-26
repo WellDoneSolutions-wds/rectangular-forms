@@ -76,12 +76,12 @@ export const useCurrentControl = <T extends AbstractControl>(
       } else {
         currentControl = control as T;
       }
-      if (currentControl instanceof expectedControl) {
-        const messageError = {
-          code: `Control with name :${name} is not instance of ${expectedControl}.`,
-        };
-        throw messageError;
-      }
+      // if (currentControl instanceof expectedControl) {
+      //   const messageError = {
+      //     code: `Control with name :${name} is not instance of ${expectedControl}.`,
+      //   };
+      //   throw messageError;
+      // }
 
       setLoadControl({
         status: "SUCCESS",
