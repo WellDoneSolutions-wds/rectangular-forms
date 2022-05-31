@@ -415,7 +415,7 @@ export abstract class AbstractControl<
     this._composedAsyncValidatorFn = coerceToAsyncValidator(
       this._rawAsyncValidators
     );
-    // this.forceUpdate = this.forceUpdate.bind(this);
+    this.setValue = this.setValue.bind(this);
   }
 
   /**

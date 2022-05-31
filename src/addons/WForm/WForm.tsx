@@ -85,6 +85,11 @@ export const WForm: FC<IWFormProps> = (props) => {
     errors: formLoadedError,
   };
 
+  const formProps = {
+    className: props.className,
+    style: props.style,
+  };
+
   return (
     <>
       {formLoadStatus && formLoadStatus !== "FAILURE" && (
@@ -95,7 +100,7 @@ export const WForm: FC<IWFormProps> = (props) => {
             setSubmitted(true);
             formConfig.submit(e);
           }}
-          {...props}
+          {...formProps}
         >
           <ControlContext.Provider value={controlContext}>
             <WFormContext.Provider value={formContextProvider}>

@@ -44,6 +44,11 @@ export interface IFormConfig {
 }
 export class FormConfig implements IFormConfig {
   form!: AbstractControl;
+
+  getForm() {
+    return this.form;
+  }
+
   get formLoadedData() {
     return this._loadDataAsyncProcesor.data;
   }
@@ -149,6 +154,7 @@ export class FormConfig implements IFormConfig {
     this.loadFailed = this.loadFailed.bind(this);
 
     this.loadRetry = this.loadRetry.bind(this);
+    this.getForm = this.getForm.bind(this);
   }
 
   public static create(
