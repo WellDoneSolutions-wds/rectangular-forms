@@ -1,7 +1,7 @@
 {
   "name": "rectangular-forms",
-  "version": "1.0.15",
-  "description": "React Angular - Reactive Forms like Angular for React",
+  "version": "1.0.16",
+  "description": "Angular Reactive Forms adapted for React",
   "main": "./lib/index.js",
   "types": "./es/index.d.ts",
   "unpkg": "dist/rectangular-forms.js",
@@ -94,6 +94,9 @@
     "typescript": "^4.3.4"
   },
   "keywords": [
+    "formik",
+    "react hook forms",
+    "hook forms",
     "react",
     "angular",
     "rxjs",

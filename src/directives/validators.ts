@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+// import {Directive, forwardRef, Input, OnChanges, SimpleChanges, StaticProvider, ɵcoerceToBoolean as coerceToBoolean} from '@angular/core';
 import { Observable } from "rxjs";
 import { coerceToBoolean } from "../core/utils/coercion";
 
@@ -143,6 +144,20 @@ abstract class AbstractValidatorDirective implements Validator {
    * @internal
    */
   abstract normalizeInput(input: unknown): unknown;
+
+  /** @nodoc */
+  ngOnChanges(changes: any): void {
+    if (this.inputName in changes) {
+      const input = this.normalizeInput(changes[this.inputName].currentValue);
+      this._enabled = this.enabled(input);
+      this._validator = this._enabled
+        ? this.createValidator(input)
+        : nullValidator;
+      if (this._onChange) {
+        this._onChange();
+      }
+    }
+  }
 
   /** @nodoc */
   validate(control: AbstractControl): ValidationErrors | null {

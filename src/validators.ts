@@ -18,7 +18,11 @@ import {
   Validator,
   ValidatorFn,
 } from "./directives/validators";
+import { RuntimeErrorCode } from "./errors";
 import { AbstractControl } from "./model/abstract_model";
+import { RuntimeError } from "./core/errors";
+
+const NG_DEV_MODE = true; // typeof ngDevMode === 'undefined' || !!ngDevMode;
 
 function isEmptyInputValue(value: any): boolean {
   /**
@@ -36,65 +40,6 @@ function hasValidLength(value: any): boolean {
   // non-strict comparison is intentional, to check for both `null` and `undefined` values
   return value != null && typeof value.length === "number";
 }
-
-/**
- * @description
- * An `InjectionToken` for registering additional synchronous validators used with
- * `AbstractControl`s.
- *
- * @see `NG_ASYNC_VALIDATORS`
- *
- * @usageNotes
- *
- * ### Providing a custom validator
- *
- * The following example registers a custom validator directive. Adding the validator to the
- * existing collection of validators requires the `multi: true` option.
- *
- * ```typescript
- * @Directive({
- *   selector: '[customValidator]',
- *   providers: [{provide: NG_VALIDATORS, useExisting: CustomValidatorDirective, multi: true}]
- * })
- * class CustomValidatorDirective implements Validator {
- *   validate(control: AbstractControl): ValidationErrors | null {
- *     return { 'custom': true };
- *   }
- * }
- * ```
- *
- * @publicApi
- */
-
-/**
- * @description
- * An `InjectionToken` for registering additional asynchronous validators used with
- * `AbstractControl`s.
- *
- * @see `NG_VALIDATORS`
- *
- * @usageNotes
- *
- * ### Provide a custom async validator directive
- *
- * The following example implements the `AsyncValidator` interface to create an
- * async validator directive with a custom error key.
- *
- * ```typescript
- * @Directive({
- *   selector: '[customAsyncValidator]',
- *   providers: [{provide: NG_ASYNC_VALIDATORS, useExisting: CustomAsyncValidatorDirective, multi:
- * true}]
- * })
- * class CustomAsyncValidatorDirective implements AsyncValidator {
- *   validate(control: AbstractControl): Promise<ValidationErrors|null> {
- *     return Promise.resolve({'custom': true});
- *   }
- * }
- * ```
- *
- * @publicApi
- */
 
 /**
  * A regular expression that matches valid e-mail addresses.
@@ -244,7 +189,7 @@ export class Validators {
    *
    * Tests the value using a [regular
    * expression](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions)
-   * pattern suitable for common usecases. The pattern is based on the definition of a valid email
+   * pattern suitable for common use cases. The pattern is based on the definition of a valid email
    * address in the [WHATWG HTML
    * specification](https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address) with
    * some enhancements to incorporate more RFC rules (such as rules related to domain names and the
@@ -602,14 +547,19 @@ function isPresent(o: any): boolean {
   return o != null;
 }
 
-export function toObservable(r: any): Observable<any> {
-  const obs = ModuleUtils.isPromise(r) ? from(r) : r;
-  if (
-    !ModuleUtils.isObservable(
-      obs
-    ) /*&& (typeof ngDevMode === 'undefined' || ngDevMode)*/
-  ) {
-    throw new Error(`Expected validator to return Promise or Observable.`);
+export function toObservable(value: any): Observable<any> {
+  const obs = ModuleUtils.isPromise(value) ? from(value) : value;
+  if (NG_DEV_MODE && !ModuleUtils.isObservable(obs)) {
+    let errorMessage = `Expected async validator to return Promise or Observable.`;
+    // A synchronous validator will return object or null.
+    if (typeof value === "object") {
+      errorMessage +=
+        " Are you using a synchronous validator where an async validator is expected?";
+    }
+    throw new RuntimeError(
+      RuntimeErrorCode.WRONG_VALIDATOR_RETURN_TYPE,
+      errorMessage
+    );
   }
   return obs;
 }
@@ -796,7 +746,7 @@ export function hasValidator<T extends ValidatorFn | AsyncValidatorFn>(
  * Combines two arrays of validators into one. If duplicates are provided, only one will be added.
  *
  * @param validators The new validators.
- * @param currentValidators The base array of currrent validators.
+ * @param currentValidators The base array of current validators.
  * @returns An array of validators.
  */
 export function addValidators<T extends ValidatorFn | AsyncValidatorFn>(
@@ -807,7 +757,7 @@ export function addValidators<T extends ValidatorFn | AsyncValidatorFn>(
   const validatorsToAdd = makeValidatorsArray(validators);
   validatorsToAdd.forEach((v: T) => {
     // Note: if there are duplicate entries in the new validators array,
-    // only the first one would be added to the current list of validarors.
+    // only the first one would be added to the current list of validators.
     // Duplicate ones would be ignored since `hasValidator` would detect
     // the presence of a validator function and we update the current list in place.
     if (!hasValidator(current, v)) {

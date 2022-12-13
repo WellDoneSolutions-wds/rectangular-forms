@@ -7,11 +7,14 @@
  */
 
 import { Observable } from "rxjs";
-import { AsyncProcessor } from "../addons/utils/LoadControl";
+import { FormArray } from "./form_array";
+import { FormGroup } from "./form_group";
+
 import { RuntimeError } from "../core/errors";
 import { EventEmitter } from "../core/event_emmiter";
 
 import {
+  asyncValidatorsDroppedWithOptsWarning,
   missingControlError,
   missingControlValueError,
   noControlsError,
@@ -30,8 +33,9 @@ import {
   removeValidators,
   toObservable,
 } from "../validators";
-import { FormArray } from "./form_array";
-import { FormGroup } from "./form_group";
+import { AsyncProcessor } from "..";
+
+const NG_DEV_MODE = true; // typeof ngDevMode === 'undefined' || !!ngDevMode;
 
 /**
  * Reports that a control is valid, meaning that no errors exist in the input value.
@@ -113,6 +117,12 @@ export function pickAsyncValidators(
   asyncValidator?: AsyncValidatorFn | AsyncValidatorFn[] | null,
   validatorOrOpts?: ValidatorFn | ValidatorFn[] | AbstractControlOptions | null
 ): AsyncValidatorFn | AsyncValidatorFn[] | null {
+  // TODO: enable ngDevMode
+  // if (typeof ngDevMode === "undefined" || ngDevMode) {
+  if (isOptionsObj(validatorOrOpts) && asyncValidator) {
+    console.warn(asyncValidatorsDroppedWithOptsWarning);
+  }
+  // }
   return (
     (isOptionsObj(validatorOrOpts)
       ? validatorOrOpts.asyncValidators
@@ -176,13 +186,13 @@ export function assertControlPresent(
   if (!collection.length) {
     throw new RuntimeError(
       RuntimeErrorCode.NO_CONTROLS,
-      noControlsError(isGroup)
+      NG_DEV_MODE ? noControlsError(isGroup) : ""
     );
   }
   if (!controls[key]) {
     throw new RuntimeError(
       RuntimeErrorCode.MISSING_CONTROL,
-      missingControlError(isGroup, key)
+      NG_DEV_MODE ? missingControlError(isGroup, key) : ""
     );
   }
 }
@@ -196,7 +206,7 @@ export function assertAllValuesPresent(
     if (value[key] === undefined) {
       throw new RuntimeError(
         RuntimeErrorCode.MISSING_CONTROL_VALUE,
-        missingControlValueError(isGroup, key)
+        NG_DEV_MODE ? missingControlValueError(isGroup, key) : ""
       );
     }
   });
@@ -214,17 +224,89 @@ export type ɵIsAny<T, Y, N> = 0 extends 1 & T ? Y : N;
 export type ɵTypedOrUntyped<T, Typed, Untyped> = ɵIsAny<T, Untyped, Typed>;
 
 /**
- * Value gives the type of `.value` in an `AbstractControl`.
+ * Value gives the value type corresponding to a control type.
  *
- * For internal use only.
+ * Note that the resulting type will follow the same rules as `.value` on your control, group, or
+ * array, including `undefined` for each group element which might be disabled.
+ *
+ * If you are trying to extract a value type for a data model, you probably want {@link RawValue},
+ * which will not have `undefined` in group keys.
+ *
+ * @usageNotes
+ *
+ * ### `FormControl` value type
+ *
+ * You can extract the value type of a single control:
+ *
+ * ```ts
+ * type NameControl = FormControl<string>;
+ * type NameValue = Value<NameControl>;
+ * ```
+ *
+ * The resulting type is `string`.
+ *
+ * ### `FormGroup` value type
+ *
+ * Imagine you have an interface defining the controls in your group. You can extract the shape of
+ * the values as follows:
+ *
+ * ```ts
+ * interface PartyFormControls {
+ *   address: FormControl<string>;
+ * }
+ *
+ * // Value operates on controls; the object must be wrapped in a FormGroup.
+ * type PartyFormValues = Value<FormGroup<PartyFormControls>>;
+ * ```
+ *
+ * The resulting type is `{address: string|undefined}`.
+ *
+ * ### `FormArray` value type
+ *
+ * You can extract values from FormArrays as well:
+ *
+ * ```ts
+ * type GuestNamesControls = FormArray<FormControl<string>>;
+ *
+ * type NamesValues = Value<GuestNamesControls>;
+ * ```
+ *
+ * The resulting type is `string[]`.
+ *
+ * **Internal: not for public use.**
  */
 export type ɵValue<T extends AbstractControl | undefined> =
   T extends AbstractControl<any, any> ? T["value"] : never;
 
 /**
- * RawValue gives the type of `.getRawValue()` in an `AbstractControl`.
+ * RawValue gives the raw value type corresponding to a control type.
  *
- * For internal use only.
+ * Note that the resulting type will follow the same rules as `.getRawValue()` on your control,
+ * group, or array. This means that all controls inside a group will be required, not optional,
+ * regardless of their disabled state.
+ *
+ * You may also wish to use {@link ɵValue}, which will have `undefined` in group keys (which can be
+ * disabled).
+ *
+ * @usageNotes
+ *
+ * ### `FormGroup` raw value type
+ *
+ * Imagine you have an interface defining the controls in your group. You can extract the shape of
+ * the raw values as follows:
+ *
+ * ```ts
+ * interface PartyFormControls {
+ *   address: FormControl<string>;
+ * }
+ *
+ * // RawValue operates on controls; the object must be wrapped in a FormGroup.
+ * type PartyFormValues = RawValue<FormGroup<PartyFormControls>>;
+ * ```
+ *
+ * The resulting type is `{address: string}`. (Note the absence of `undefined`.)
+ *
+ *  **Internal: not for public use.**
  */
 export type ɵRawValue<T extends AbstractControl | undefined> =
   T extends AbstractControl<any, any>
@@ -237,7 +319,7 @@ export type ɵRawValue<T extends AbstractControl | undefined> =
 // clang-format off
 
 /**
- * Tokenize splits a string literal S by a delimeter D.
+ * Tokenize splits a string literal S by a delimiter D.
  */
 export type ɵTokenize<S extends string, D extends string> = string extends S
   ? string[] /* S must be a literal */
@@ -353,7 +435,7 @@ export abstract class AbstractControl<
    *
    * @internal
    */
-  private _composedValidatorFn: ValidatorFn | null;
+  private _composedValidatorFn!: ValidatorFn | null;
 
   /**
    * Contains the result of merging asynchronous validators into a single validator function
@@ -361,7 +443,7 @@ export abstract class AbstractControl<
    *
    * @internal
    */
-  private _composedAsyncValidatorFn: AsyncValidatorFn | null;
+  private _composedAsyncValidatorFn!: AsyncValidatorFn | null;
 
   /**
    * Synchronous validators as they were provided:
@@ -371,7 +453,7 @@ export abstract class AbstractControl<
    *
    * @internal
    */
-  private _rawValidators: ValidatorFn | ValidatorFn[] | null;
+  private _rawValidators!: ValidatorFn | ValidatorFn[] | null;
 
   /**
    * Asynchronous validators as they were provided:
@@ -382,7 +464,7 @@ export abstract class AbstractControl<
    *
    * @internal
    */
-  private _rawAsyncValidators: AsyncValidatorFn | AsyncValidatorFn[] | null;
+  private _rawAsyncValidators!: AsyncValidatorFn | AsyncValidatorFn[] | null;
 
   /**
    * The current value of the control.
@@ -409,13 +491,8 @@ export abstract class AbstractControl<
     validators: ValidatorFn | ValidatorFn[] | null,
     asyncValidators: AsyncValidatorFn | AsyncValidatorFn[] | null
   ) {
-    this._rawValidators = validators;
-    this._rawAsyncValidators = asyncValidators;
-    this._composedValidatorFn = coerceToValidator(this._rawValidators);
-    this._composedAsyncValidatorFn = coerceToAsyncValidator(
-      this._rawAsyncValidators
-    );
-    this.setValue = this.setValue.bind(this);
+    this._assignValidators(validators);
+    this._assignAsyncValidators(asyncValidators);
   }
 
   /**
@@ -493,7 +570,7 @@ export abstract class AbstractControl<
    * false otherwise.
    */
   get pending(): boolean {
-    return this.status === PENDING;
+    return this.status == PENDING;
   }
 
   /**
@@ -610,8 +687,7 @@ export abstract class AbstractControl<
    * using `addValidators()` method instead.
    */
   setValidators(validators: ValidatorFn | ValidatorFn[] | null): void {
-    this._rawValidators = validators;
-    this._composedValidatorFn = coerceToValidator(validators);
+    this._assignValidators(validators);
   }
 
   /**
@@ -627,8 +703,7 @@ export abstract class AbstractControl<
   setAsyncValidators(
     validators: AsyncValidatorFn | AsyncValidatorFn[] | null
   ): void {
-    this._rawAsyncValidators = validators;
-    this._composedAsyncValidatorFn = coerceToAsyncValidator(validators);
+    this._assignAsyncValidators(validators);
   }
 
   /**
@@ -670,6 +745,24 @@ export abstract class AbstractControl<
    * validator function as the one that was originally set. If a provided validator is not found,
    * it is ignored.
    *
+   * @usageNotes
+   *
+   * ### Reference to a ValidatorFn
+   *
+   * ```
+   * // Reference to the RequiredValidator
+   * const ctrl = new FormControl<string | null>('', Validators.required);
+   * ctrl.removeValidators(Validators.required);
+   *
+   * // Reference to anonymous function inside MinValidator
+   * const minValidator = Validators.min(3);
+   * const ctrl = new FormControl<string | null>('', minValidator);
+   * expect(ctrl.hasValidator(minValidator)).toEqual(true)
+   * expect(ctrl.hasValidator(Validators.min(3))).toEqual(false)
+   *
+   * ctrl.removeValidators(minValidator);
+   * ```
+   *
    * When you add or remove a validator at run time, you must call
    * `updateValueAndValidity()` for the new validation to take effect.
    *
@@ -701,6 +794,22 @@ export abstract class AbstractControl<
   /**
    * Check whether a synchronous validator function is present on this control. The provided
    * validator must be a reference to the exact same function that was provided.
+   *
+   * @usageNotes
+   *
+   * ### Reference to a ValidatorFn
+   *
+   * ```
+   * // Reference to the RequiredValidator
+   * const ctrl = new FormControl<number | null>(0, Validators.required);
+   * expect(ctrl.hasValidator(Validators.required)).toEqual(true)
+   *
+   * // Reference to anonymous function inside MinValidator
+   * const minValidator = Validators.min(3);
+   * const ctrl = new FormControl<number | null>(0, minValidator);
+   * expect(ctrl.hasValidator(minValidator)).toEqual(true)
+   * expect(ctrl.hasValidator(Validators.min(3))).toEqual(false)
+   * ```
    *
    * @param validator The validator to check for presence. Compared by function reference.
    * @returns Whether the provided validator was found on this control.
@@ -1089,6 +1198,11 @@ export abstract class AbstractControl<
    *
    * Calling `setErrors` also updates the validity of the parent control.
    *
+   * @param opts Configuration options that determine how the control propagates
+   * changes and emits events after the control errors are set.
+   * * `emitEvent`: When true or not supplied (the default), the `statusChanges`
+   * observable emits an event after the errors are set.
+   *
    * @usageNotes
    *
    * ### Manually set the errors for a control
@@ -1378,5 +1492,35 @@ export abstract class AbstractControl<
   /** @internal */
   _find(name: string | number): AbstractControl | null {
     return null;
+  }
+
+  /**
+   * Internal implementation of the `setValidators` method. Needs to be separated out into a
+   * different method, because it is called in the constructor and it can break cases where
+   * a control is extended.
+   */
+  private _assignValidators(
+    validators: ValidatorFn | ValidatorFn[] | null
+  ): void {
+    this._rawValidators = Array.isArray(validators)
+      ? validators.slice()
+      : validators;
+    this._composedValidatorFn = coerceToValidator(this._rawValidators);
+  }
+
+  /**
+   * Internal implementation of the `setAsyncValidators` method. Needs to be separated out into a
+   * different method, because it is called in the constructor and it can break cases where
+   * a control is extended.
+   */
+  private _assignAsyncValidators(
+    validators: AsyncValidatorFn | AsyncValidatorFn[] | null
+  ): void {
+    this._rawAsyncValidators = Array.isArray(validators)
+      ? validators.slice()
+      : validators;
+    this._composedAsyncValidatorFn = coerceToAsyncValidator(
+      this._rawAsyncValidators
+    );
   }
 }
