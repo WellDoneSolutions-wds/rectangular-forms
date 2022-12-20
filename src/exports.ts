@@ -30,3 +30,5 @@ export * from "./util";
 export * from "./directives/validators";
 export * from "./directives/reactive_errors";
 export * from "./directives/error_examples";
+
+export * from "./addons/WForm/WReactNativeForm";
