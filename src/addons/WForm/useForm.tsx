@@ -1,4 +1,6 @@
 import { useReducer, useRef } from "react";
+import { Observable, Subject } from "rxjs";
+import { share } from "rxjs/operators";
 import { AbstractControl } from "../../exports";
 import {
   AsyncProcessor,
@@ -28,7 +30,8 @@ interface IUseConfigForm {
 
 type ICreateForm = (
   data: any,
-  oldForm: AbstractControl | null
+  oldForm: AbstractControl | null,
+  formConfig: FormConfig
 ) => AbstractControl;
 
 export interface IFormConfig {
@@ -44,6 +47,9 @@ export interface IFormConfig {
 }
 export class FormConfig implements IFormConfig {
   form!: AbstractControl;
+
+  reset$: Observable<void>;
+  private _reset$ = new Subject<void>();
 
   getForm() {
     return this.form;
@@ -72,7 +78,7 @@ export class FormConfig implements IFormConfig {
     this._loadDataAsyncProcesor.succeed(data);
 
     const { createForm, onFormLoaded } = this.config;
-    this.form = createForm(data, this.form);
+    this.form = createForm(data, this.form, this);
     this.form.forceUpdate = this.forceUpdate;
 
     this.forceUpdate();
@@ -155,6 +161,9 @@ export class FormConfig implements IFormConfig {
 
     this.loadRetry = this.loadRetry.bind(this);
     this.getForm = this.getForm.bind(this);
+    this.reset = this.reset.bind(this);
+    this.reset$ = this._reset$.pipe(share());
+    this.reset$.subscribe();
   }
 
   public static create(
@@ -167,6 +176,10 @@ export class FormConfig implements IFormConfig {
   submit(event: React.FormEvent<HTMLFormElement>) {
     const { onSubmit } = this.config;
     onSubmit && onSubmit(this.form!, this._saveDataAsyncProcesor, event);
+  }
+
+  reset() {
+    this._reset$.next();
   }
 }
 

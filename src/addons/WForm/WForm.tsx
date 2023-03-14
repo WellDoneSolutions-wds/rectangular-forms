@@ -1,4 +1,11 @@
-import React, { FC, ReactNode, useContext, useState } from "react";
+import React, {
+  FC,
+  ReactNode,
+  useContext,
+  useEffect,
+  useReducer,
+  useState,
+} from "react";
 import {
   ControlContext,
   IControlContext,
@@ -58,8 +65,16 @@ export const WForm: FC<IWFormProps> = (props) => {
     formSavedError,
     formSavedData,
     formSaveParams,
+    reset$,
   } = formConfig;
   const [submitted, setSubmitted] = useState(false);
+  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  useEffect(() => {
+    reset$.subscribe(() => {
+      setSubmitted(false);
+      forceUpdate();
+    });
+  }, [reset$]);
 
   const formContextProvider: IFormContext = {
     form,
