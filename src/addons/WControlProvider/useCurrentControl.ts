@@ -174,8 +174,10 @@ export const useCurrentControl = <T extends AbstractControl>(
 
   useEffect(() => {
     const { errors, status } = internalValidation;
-    if (status !== "INVALID") return;
-    if (!displayErrors) return;
+    if (!displayErrors || status !== "INVALID") {
+      setValidation({ errors: null, status });
+      return;
+    }
     const errorsCalculated = Object.keys(errors || {}).reduce((t, e) => {
       const value =
         (errorMessages || {})[e] || (globalErrorMessages || {})[e] || e;
@@ -184,8 +186,11 @@ export const useCurrentControl = <T extends AbstractControl>(
       t[e] = errorValue;
       return t;
     }, {} as { [key: string]: any });
-
-    setValidation({ errors: errorsCalculated, status });
+    setValidation({
+      errors:
+        Object.keys(errorsCalculated).length === 0 ? null : errorsCalculated,
+      status,
+    });
   }, [internalValidation, globalErrorMessages, errorMessages, displayErrors]);
 
   const controlContext: IControlContext<T> = {

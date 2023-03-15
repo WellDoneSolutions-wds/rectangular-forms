@@ -33,7 +33,7 @@ import {
   removeValidators,
   toObservable,
 } from "../validators";
-import { AsyncProcessor } from "..";
+import { AsyncProcessor } from "../addons/utils/LoadControl";
 
 const NG_DEV_MODE = true; // typeof ngDevMode === 'undefined' || !!ngDevMode;
 

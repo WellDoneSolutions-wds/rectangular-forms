@@ -1,6 +1,6 @@
 {
   "name": "rectangular-forms",
-  "version": "1.0.25",
+  "version": "1.0.27",
   "description": "Angular Reactive Forms adapted for React",
   "main": "./lib/index.js",
   "types": "./es/index.d.ts",
